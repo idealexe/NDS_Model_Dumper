@@ -38,11 +38,12 @@ def ascii2bin(a):
     b = zeroPadd(b, len(a) * 8) # 1文字8bit
     return b
 
+# 引数が足りないとき
 if len(sys.argv) < 2:
     print "Usage: >python NSBMD_Dumper.py file"
     quit()
 
-file = sys.argv[1]  # 1つ目の引数がファイル名
+file = sys.argv[1]  # 1つ目の引数をファイル名とする
 
 # withを抜けると自動でファイルがクローズされる
 with open(file, 'rb') as romFile:
@@ -53,6 +54,7 @@ with open(file, 'rb') as romFile:
     if os.path.exists(path) != 1:
         os.mkdir(path)  # ベースネームと同じ名前のフォルダを作成
         os.mkdir(path + "\\nsbmd")
+        os.mkdir(path + "\\nsbtx")
     else:
         print "Directory already exists"
 
