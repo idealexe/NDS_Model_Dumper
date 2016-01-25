@@ -38,10 +38,14 @@ def ascii2bin(a):
     b = zeroPadd(b, len(a) * 8) # 1文字8bit
     return b
 
+if len(sys.argv) < 2:
+    print "Usage: >python NSBMD_Dumper.py file"
+    quit()
 
 file = sys.argv[1]  # 1つ目の引数がファイル名
 
-with open(file, 'rb') as romFile:   # withを抜けると自動でファイルがクローズされる
+# withを抜けると自動でファイルがクローズされる
+with open(file, 'rb') as romFile:
     data = romFile.read()   # ファイルを文字列として読み込む
 
     fileName = os.path.basename(file)   # ファイルの名前をパスから切り出し
@@ -50,7 +54,7 @@ with open(file, 'rb') as romFile:   # withを抜けると自動でファイル�
         os.mkdir(path)  # ベースネームと同じ名前のフォルダを作成
         os.mkdir(path + "\\nsbmd")
     else:
-        print "Directry alredy exists"
+        print "Directory already exists"
 
     findBMD0 = re.finditer("BMD0", data)    # 文字列BMD0を検索
     for match in findBMD0:
