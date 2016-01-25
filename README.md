@@ -1,4 +1,4 @@
-# NDS_Model_Dumper
+# NSBMD_Dumper
 
 ## 概要
 LZ77圧縮されたnsbmd形式の3Dモデルを抽出するプログラムです．
