@@ -53,8 +53,8 @@ with open(file, 'rb') as romFile:
     path, ext = os.path.splitext(fileName)  # ベースネームと拡張子を取得
     if os.path.exists(path) != 1:
         os.mkdir(path)  # ベースネームと同じ名前のフォルダを作成
-        os.mkdir(path + "\\nsbmd")
-        os.mkdir(path + "\\nsbtx")
+        os.mkdir(path + "\\nsbmd")  # モデル用フォルダ
+        os.mkdir(path + "\\nsbtx")  # テクスチャ用フォルダ
     else:
         print "Directory already exists"
 
@@ -76,7 +76,6 @@ with open(file, 'rb') as romFile:
             readPos = matchAddr - 1 # Start
             writePos = 0
 
-            #for k in range(20):    # テスト用
             while len(output) < uncompSize:
                 #print len(output)
                 currentChar = readBin(data, readPos)
@@ -124,23 +123,28 @@ with open(file, 'rb') as romFile:
                 """
 
 
-            output = output[0:uncompSize]
+            output = output[0:uncompSize]   # 必要な部分だけ切り出し
             #print binascii.hexlify(output).upper()
             #print output
             #print len(output)
 
+            # nsbmdファイルなら
             if match.group() == "BMD0":
                 ext = "nsbmd"
-                if output[14] == str('\x01'):   # セクション数によって名前の位置がずれる
+                # セクション数によって名前の位置がずれる
+                if output[14] == str('\x01'):
                     outName = output[52:62].translate(None, str('\x00'))
                 else:
                     outName = output[56:66].translate(None, str('\x00'))
 
+            # nsbtxファイルなら
             elif match.group() == "BTX0":
                 ext = "nsbtx"
-                blockSize = struct.unpack('h',output[86:88])
+                # 名前が格納されているブロックの先頭アドレスを計算する
+                # メインヘッダは共通で 80 Bytes
+                blockSize = struct.unpack('h',output[86:88])    # 謎のブロックのサイズ
                 blockSize = blockSize[0]
-                infoSize = struct.unpack('h',output[80+blockSize+2:80+blockSize+4])
+                infoSize = struct.unpack('h',output[80+blockSize+2:80+blockSize+4]) # 情報ブロックのサイズ
                 infoSize = infoSize[0]
                 outName = output[80 + blockSize + infoSize:80 + blockSize+ infoSize + 16].translate(None, str('\x00'))
             else:
