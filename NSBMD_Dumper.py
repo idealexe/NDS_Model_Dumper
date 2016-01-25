@@ -38,11 +38,12 @@ def ascii2bin(a):
     b = zeroPadd(b, len(a) * 8) # 1文字8bit
     return b
 
+# 引数が足りないとき
 if len(sys.argv) < 2:
     print "Usage: >python NSBMD_Dumper.py file"
     quit()
 
-file = sys.argv[1]  # 1つ目の引数がファイル名
+file = sys.argv[1]  # 1つ目の引数をファイル名とする
 
 # withを抜けると自動でファイルがクローズされる
 with open(file, 'rb') as romFile:
@@ -53,12 +54,14 @@ with open(file, 'rb') as romFile:
     if os.path.exists(path) != 1:
         os.mkdir(path)  # ベースネームと同じ名前のフォルダを作成
         os.mkdir(path + "\\nsbmd")
+        os.mkdir(path + "\\nsbtx")
     else:
         print "Directory already exists"
 
-    findBMD0 = re.finditer("BMD0", data)    # 文字列BMD0を検索
-    for match in findBMD0:
+    find = re.finditer("BMD0|BTX0", data)    # 文字列BMD0,BTX0を検索
+    for match in find:
         matchAddr = match.start()   # BMD0の開始位置
+        print match.group()
         #print hex(matchAddr)
 
         compForm = readBin(data, matchAddr - 5) # 圧縮形式を示すデータは5バイト前
@@ -126,13 +129,25 @@ with open(file, 'rb') as romFile:
             #print output
             #print len(output)
 
-            if output[14] == str('\x01'):   # セクション数によって名前の位置がずれる
-                outName = output[52:62].translate(None, str('\x00'))
-            else:
-                outName = output[56:66].translate(None, str('\x00'))
+            if match.group() == "BMD0":
+                ext = "nsbmd"
+                if output[14] == str('\x01'):   # セクション数によって名前の位置がずれる
+                    outName = output[52:62].translate(None, str('\x00'))
+                else:
+                    outName = output[56:66].translate(None, str('\x00'))
 
-            with open(path + "\\nsbmd\\" + outName + ".nsbmd", "wb") as out:
-                print (outName + ".nsbmd\n")
+            elif match.group() == "BTX0":
+                ext = "nsbtx"
+                blockSize = struct.unpack('h',output[86:88])
+                blockSize = blockSize[0]
+                infoSize = struct.unpack('h',output[80+blockSize+2:80+blockSize+4])
+                infoSize = infoSize[0]
+                outName = output[80 + blockSize + infoSize:80 + blockSize+ infoSize + 16].translate(None, str('\x00'))
+            else:
+                ext = "unknown"
+
+            with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
+                print outName + "." + ext + "\n"
                 out.write(output)
                 #print readPos
 
