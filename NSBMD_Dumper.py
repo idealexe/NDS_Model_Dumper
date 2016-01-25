@@ -66,10 +66,6 @@ with open(file, 'rb') as romFile:
         #print hex(matchAddr)
 
         output = "" # 出力データ格納用
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
         compForm = readBin(data, matchAddr - 5) # 圧縮形式を示すデータは5バイト前
 
         if compForm == str('\x10'): # LZ77 0x10
@@ -155,15 +151,10 @@ with open(file, 'rb') as romFile:
             fileSize = struct.unpack('l', data[matchAddr + 8 : matchAddr + 12])
             fileSize = fileSize[0]
             # ファイルサイズが0以下だったりLZ77であつかえるサイズ以上ならスキップ
-<<<<<<< HEAD
             if fileSize <= 0 or fileSize > int("FFFFFF",16):
                 continue
 
             print "File Size: " + str(fileSize) + " Bytes"
-=======
-            if fileSize < 0 or fileSize > int("FFFFFF",16):
-                continue
->>>>>>> origin/master
             output = data[matchAddr:matchAddr + fileSize]
 
         """
@@ -191,7 +182,6 @@ with open(file, 'rb') as romFile:
         else:
             ext = "unknown"
 
-<<<<<<< HEAD
         try:
             with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
                 print outName + "." + ext + "\n"
@@ -199,11 +189,5 @@ with open(file, 'rb') as romFile:
                 #print readPos
         except  IOError:
             print "不正なファイル名のためスキップしました．"
-=======
-        with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
-            print outName + "." + ext + "\n"
-            out.write(output)
-            #print readPos
->>>>>>> origin/master
 
         #break   # 1モデルだけ出力
