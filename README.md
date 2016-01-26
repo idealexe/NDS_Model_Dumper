@@ -7,7 +7,8 @@ NSBTX形式のテクスチャも同時に抽出します．
 
 ## 使用方法
 Pythonプログラムとして実行してください．  
-第一引数に抽出元のファイルを与えてください．
+第一引数に抽出元のファイルを与えてください．  
+`>python NSBMD_Dumper.py filename`
 
 ## 参考
 - lowlines 氏によるNSBMD, NSBTXファイルの構造
