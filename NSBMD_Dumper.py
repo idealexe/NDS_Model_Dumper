@@ -38,9 +38,117 @@ def ascii2bin(a):
     b = zeroPadd(b, len(a) * 8) # 1文字8bit
     return b
 
+def decomp_lz77_10(data, startAddr, uncompSize):
+    output = "" # 復号結果を格納する文字列
+    writePos = 0    # 復号データの書き込み位置
+    readPos = startAddr # 圧縮データの読み取り開始位置
+
+    while len(output) < uncompSize:
+        currentChar = readBin(data, readPos)    # ブロックヘッダの読み込み
+        #print binascii.hexlify(currentChar)
+        blockHeader = ascii2bin(currentChar)    # ブロックヘッダを2進数文字列に変換
+        for i in range(8):  # 8ブロックで1セット
+            # 非圧縮ブロックなら
+            if blockHeader[i] == str(0):
+                readPos += 1    # 次の読み取り位置へ
+                if readPos >= len(data):    # ここ適当
+                    break
+                currentChar = readBin(data, readPos)    # 1バイト読み込み
+                output += currentChar   # そのまま出力
+                writePos += 1   # 次の書き込み位置へ
+            # 圧縮ブロックなら
+            else:
+                readPos += 2
+                blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
+                blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
+                #print "Block Data: " + blockData
+                offs = int(blockData[4:16],2) + 1
+                #print "Backwards Offset: " + str(offs) + " bytes"
+                leng = int(blockData[0:4],2) + 3
+                #print "Copy Length: " + str(leng) + " bytes"
+                currentChar = output[writePos - offs : writePos - offs + leng]
+                if len(currentChar) < leng: # ここで引っかかった
+                    #print "Block Data: " + blockData
+                    #print "Backwards Offset: " + str(offs) + " bytes"
+                    #print "Copy Length: " + str(leng) + " bytes"
+                    # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
+                    #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
+                    currentChar = currentChar * leng # ここ適当
+                    currentChar = currentChar[0:leng]
+                    #print binascii.hexlify(currentChar)
+                #print currentChar
+                #print binascii.hexlify(currentChar)
+                output += currentChar
+                writePos += leng    # 書き込んだバイト数だけずらす
+        readPos += 1
+
+    output = output[0:uncompSize]   # 必要な部分だけ切り出し
+    return output
+
+def decomp_lz77_11(data, startAddr, uncompSize):
+    output = "" # 復号結果を格納する文字列
+    writePos = 0    # 復号データの書き込み位置
+    readPos = startAddr # 圧縮データの読み取り開始位置
+
+    while readPos < len(data) and len(output) < uncompSize:
+        blockHeader = readBin(data, readPos)    # ブロックヘッダの読み込み
+        #print binascii.hexlify(currentChar)
+        readPos += 1
+        blockHeader = ascii2bin(blockHeader)    # ブロックヘッダを2進数文字列に変換
+        for i in range(7,-1,-1):  # 8ブロックで1セット
+            # 非圧縮ブロックなら
+            first = readBin(data, readPos)
+            second = readBin(data, readPos + 1)
+
+            if first < 0x20:
+                third = readBin(data, readPos + 2)
+                if first >= 0x10:
+                    fourth = readBin(data, readPos + 3)
+
+                    pos =
+                    copyLen = 
+            if blockHeader[i] == str(0):
+                readPos += 1    # 次の読み取り位置へ
+                if readPos >= len(data):    # ここ適当
+                    break
+                currentChar = readBin(data, readPos)    # 1バイト読み込み
+                output += currentChar   # そのまま出力
+                writePos += 1   # 次の書き込み位置へ
+            # 圧縮ブロックなら
+            else:
+                readPos += 2
+                blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
+                blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
+                #print "Block Data: " + blockData
+                offs = int(blockData[4:16],2) + 1
+                #print "Backwards Offset: " + str(offs) + " bytes"
+                leng = int(blockData[0:4],2) + 3
+                #print "Copy Length: " + str(leng) + " bytes"
+                currentChar = output[writePos - offs : writePos - offs + leng]
+                if len(currentChar) < leng: # ここで引っかかった
+                    #print "Block Data: " + blockData
+                    #print "Backwards Offset: " + str(offs) + " bytes"
+                    #print "Copy Length: " + str(leng) + " bytes"
+                    # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
+                    #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
+                    currentChar = currentChar * leng # ここ適当
+                    currentChar = currentChar[0:leng]
+                    #print binascii.hexlify(currentChar)
+                #print currentChar
+                #print binascii.hexlify(currentChar)
+                output += currentChar
+                writePos += leng    # 書き込んだバイト数だけずらす
+        readPos += 1
+
+    output = output[0:uncompSize]   # 必要な部分だけ切り出し
+    return output
+
+"""
+main
+"""
 # 引数が足りないとき
 if len(sys.argv) < 2:
-    print "Usage: >python NSBMD_Dumper.py file"
+    print "Usage: >python NSBMD_Dumper.py filename"
     quit()
 
 file = sys.argv[1]  # 1つ目の引数をファイル名とする
@@ -59,7 +167,7 @@ with open(file, 'rb') as romFile:
     else:
         print "Directory already exists"
 
-    find = re.finditer("BMD0|BTX0", data)    # 文字列BMD0,BTX0を検索
+    find = re.finditer("BMD0|BTX0", data)    # 文字列 BMD0, BTX0を検索
     for match in find:
         matchAddr = match.start()   # BMD0の開始位置
         print match.group()
@@ -68,7 +176,8 @@ with open(file, 'rb') as romFile:
         output = "" # 出力データ格納用
         compForm = readBin(data, matchAddr - 5) # 圧縮形式を示すデータは5バイト前
 
-        if compForm == str('\x10'): # LZ77 0x10
+        # LZ77 0x10
+        if compForm == str('\x10'):
             print "LZ77(0x10) compression"
             uncompSize = struct.unpack('l', data[matchAddr - 4 : matchAddr])
             uncompSize = uncompSize[0]
@@ -76,64 +185,11 @@ with open(file, 'rb') as romFile:
             # ファイルサイズが異常ならスキップ
             if uncompSize <= 0 or int("FFFFFF", 16) < uncompSize:
                 continue
-
             print "Uncompressed Size: " + str(uncompSize) + " Bytes"
 
-            readPos = matchAddr - 1 # Start
-            writePos = 0
+            output = decomp_lz77_10(data, matchAddr-1, uncompSize)
 
-            while len(output) < uncompSize:
-                #print len(output)
-                currentChar = readBin(data, readPos)
-                #print binascii.hexlify(currentChar)
-                blockHeader = ascii2bin(currentChar)    # ブロックヘッダを2進数で読み込み
-                for i in range(8):  # 8ブロックで1セット
-                    # 非圧縮ブロックなら
-                    if blockHeader[i] == str(0):
-                        readPos += 1
-                        if readPos >= len(data):    # ここ適当
-                            break
-                        currentChar = readBin(data, readPos)
-                        output += currentChar
-                        writePos += 1
-                    # 圧縮ブロックなら
-                    else:
-                        readPos += 2
-                        blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
-                        blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
-                        #print "Block Data: " + blockData
-                        offs = int(blockData[4:16],2) + 1
-                        #print "Backwards Offset: " + str(offs) + " bytes"
-                        leng = int(blockData[0:4],2) + 3
-                        #print "Copy Length: " + str(leng) + " bytes"
-                        currentChar = output[writePos - offs : writePos - offs + leng]
-                        if len(currentChar) < leng: # ここで引っかかった
-                            #print "Block Data: " + blockData
-                            #print "Backwards Offset: " + str(offs) + " bytes"
-                            #print "Copy Length: " + str(leng) + " bytes"
-                            # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
-                            #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
-                            currentChar = currentChar * leng # ここ適当
-                            currentChar = currentChar[0:leng]
-                            #print binascii.hexlify(currentChar)
-                        #print currentChar
-                        #print binascii.hexlify(currentChar)
-                        output += currentChar
-                        writePos += leng
-                readPos += 1
-
-                # 何か差異が生じた時はそのアドレス周辺まで生成して検証
-                """
-                if len(output) > int("0x6CC6",16):
-                    break
-                """
-
-
-            output = output[0:uncompSize]   # 必要な部分だけ切り出し
-            #print binascii.hexlify(output).upper()
-            #print output
-            #print len(output)
-
+        # LZ77 0x11
         elif compForm[0] == str('\x11'):
             print "LZ77(0x11) compression"
             uncompSize = struct.unpack('l', data[matchAddr -4 : matchAddr])
@@ -142,8 +198,9 @@ with open(file, 'rb') as romFile:
             # ファイルサイズが異常ならスキップ
             if uncompSize <= 0 or int("FFFFFF", 16) < uncompSize:
                 continue
-
             print "Uncompressed Size: " + str(uncompSize) + " Bytes"
+
+            output = decomp_lz77_11(data, matchAddr-1, uncompSize)
 
         # 非圧縮なら
         else:
@@ -184,10 +241,11 @@ with open(file, 'rb') as romFile:
 
         try:
             with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
+            #with open(path + "\\" + ext + "\\" + str(matchAddr) + "." + ext, "wb") as out:
                 print outName + "." + ext + "\n"
                 out.write(output)
                 #print readPos
         except  IOError:
-            print "不正なファイル名のためスキップしました．"
+            print "skipped file"
 
         #break   # 1モデルだけ出力
