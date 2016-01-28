@@ -107,9 +107,11 @@ def decomp_lz77_11(data, startAddr, uncompSize):
 
                 if int(first,16) < 0x20:
                     third = binascii.hexlify(data[readPos + 2])  # 1バイト
+
                     if int(first,16) >= 0x10:
                         fourth = binascii.hexlify(data[readPos + 3])
 
+                        # 0xF = 0x0FとANDをとる→00001111とANDをとる→下位4ビットを取り出すことと等しい
                         offs = ( (int(third,16) & 0xF) << 8 | int(fourth,16) ) + 1 # thirdと0xFのビットANDをとって,fourthとビットORを取った後 +1
                         leng = ( int(second,16) << 4 | ( (int(first,16) & 0xF) << 12 )  | (int(third,16) >> 4) ) + 273
 
