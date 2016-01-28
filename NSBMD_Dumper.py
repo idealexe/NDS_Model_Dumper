@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-by exe
+NSBMD_Dumper by exe
 """
 
 import os
