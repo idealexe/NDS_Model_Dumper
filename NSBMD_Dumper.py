@@ -157,7 +157,6 @@ with open(file, 'rb') as romFile:
 
             #break   # 1モデルだけ出力
 
-
         elif compForm[0] == str('\x11'):
             print "LZ77(0x11) compression"
             uncompSize = struct.unpack('l', data[matchAddr -4 : matchAddr])
