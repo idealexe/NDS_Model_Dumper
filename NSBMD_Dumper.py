@@ -167,6 +167,8 @@ if len(sys.argv) < 2:
     quit()
 
 file = sys.argv[1]  # 1つ目の引数をファイル名とする
+dumpCount = 0
+skipCount = 0
 
 # withを抜けると自動でファイルがクローズされる
 with open(file, 'rb') as romFile:
@@ -259,8 +261,13 @@ with open(file, 'rb') as romFile:
             #with open(path + "\\" + ext + "\\" + str(matchAddr) + "." + ext, "wb") as out:  # ファイル名がおかしくなる時はこっちで検証
                 print outName + "." + ext + "\n"
                 out.write(output)
+                dumpCount += 1
                 #print readPos
         except  IOError:
-            print "skipped file"
+            print "File Skipped"
+            skipCount += 1
 
         #break   # 1モデルだけ出力
+
+print "{0:>5}".format(dumpCount) + " File Dumped"
+print "{0:>5}".format(skipCount) + " File Skipped"
