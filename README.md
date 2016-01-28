@@ -17,6 +17,7 @@ Pythonプログラムとして実行してください．
 
 - LZ77圧縮の資料
   - http://florian.nouwt.com/wiki/index.php/LZ77_(Compression_Format)
+  - https://github.com/LemonBoy/taiko/blob/master/source/lz77.c
 
 - NDBMD, NSBTXファイルの閲覧
   - https://github.com/Gericom/EveryFileExplorer
