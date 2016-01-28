@@ -165,3 +165,4 @@ with open(file, 'rb') as romFile:
 
         else:
             print "not compressed"
+    
