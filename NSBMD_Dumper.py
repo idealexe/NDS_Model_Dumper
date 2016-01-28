@@ -38,6 +38,7 @@ def ascii2bin(a):
     b = zeroPadd(b, len(a) * 8) # 1文字8bit
     return b
 
+# LZ77 0x10 復号
 def decomp_lz77_10(data, startAddr, uncompSize):
     output = "" # 復号結果を格納する文字列
     writePos = 0    # 復号データの書き込み位置
@@ -85,6 +86,7 @@ def decomp_lz77_10(data, startAddr, uncompSize):
     output = output[0:uncompSize]   # 必要な部分だけ切り出し
     return output
 
+# LZ77 0x11 復号
 def decomp_lz77_11(data, startAddr, uncompSize):
     output = "" # 復号結果を格納する文字列
     writePos = 0    # 復号データの書き込み位置
@@ -98,12 +100,16 @@ def decomp_lz77_11(data, startAddr, uncompSize):
         readPos += 1
 
         for i in range(8):  # 8ブロックで1セット
+            # 非圧縮ブロックなら
+            if blockHeader[i] == str(0):
+                output += data[readPos]
+                writePos += 1
+                readPos += 1
             # 圧縮ブロックなら
-            if blockHeader[i] != str(0):
-
-                #first = readBin(data, readPos)  # u8:符号なし8ビット = 1バイト
+            else:
                 first = binascii.hexlify(data[readPos])
                 second = binascii.hexlify(data[readPos + 1])
+                print "first: 0x" + first
 
                 if int(first,16) < 0x20:
                     third = binascii.hexlify(data[readPos + 2])  # 1バイト
@@ -112,37 +118,42 @@ def decomp_lz77_11(data, startAddr, uncompSize):
                         fourth = binascii.hexlify(data[readPos + 3])
 
                         # 0xF = 0x0FとANDをとる→00001111とANDをとる→下位4ビットを取り出すことと等しい
-                        offs = ( (int(third,16) & 0xF) << 8 | int(fourth,16) ) + 1 # thirdと0xFのビットANDをとって,fourthとビットORを取った後 +1
-                        leng = ( int(second,16) << 4 | ( (int(first,16) & 0xF) << 12 )  | (int(third,16) >> 4) ) + 273
+                        offs = (((int(third,16) & 0xF) << 8) | int(fourth,16) ) + 1 # thirdと0xFのビットANDをとって,fourthとビットORを取った後 +1
+                        leng = ((int(second,16) << 4) | ((int(first,16) & 0xF) << 12 ) | (int(third,16) >> 4)) + 273
 
                         readPos += 4
 
                     else:
-                        offs =  (( (int(second,16) & 0xF) << 8 ) | int(third,16) ) + 1
+                        offs = (((int(second,16) & 0xF) << 8 ) | int(third,16)) + 1
                         leng = (((int(first,16) & 0xF) << 4) | (int(second,16) >> 4)) + 17;
 
                         readPos += 3
                 else:
                     blockInfo = first + second
                     #print "Block Info: " + blockInfo
-                    leng = int(blockInfo[0], 16) + 1
-                    #print "Copy Length: " + str(leng)
                     offs = int(blockInfo[1:4], 16) + 1
-                    #print "Copy Offset: " + str(offs)
+                    print "Copy Offset: " + str(offs)
+                    leng = int(blockInfo[0], 16) + 1
+                    print "Copy Length: " + str(leng)
 
                     readPos += 2
 
-                output += output[writePos - offs : writePos - offs + leng]
+                # コピーする範囲が存在するデータを超えたとき
+                """
+                本来のアルゴリズムではreadPos,writePosをリセットして先頭からやりなおす
+                """
+                copyData = output[writePos - offs : writePos - offs + leng]
+                if len(copyData) < leng:
+                    copyData = copyData*leng
+                    copyData = copyData[0:leng]
+
+                output += copyData
+                print "Write Pos: " + hex(writePos)
+                print "Copy Data: " + binascii.hexlify(copyData)
                 writePos += leng
 
-            # 非圧縮ブロックなら
-            else:
-                output += data[readPos]
-                writePos += 1
-                readPos += 1
-
-            if readPos >= len(data) or writePos >= uncompSize:
-                break
+        if readPos >= len(data) or writePos >= uncompSize:
+            break
 
     output = output[0:uncompSize]   # 必要な部分だけ切り出し
     return output
@@ -252,4 +263,4 @@ with open(file, 'rb') as romFile:
         except  IOError:
             print "skipped file"
 
-        #break   # 1モデルだけ出力
+        break   # 1モデルだけ出力
