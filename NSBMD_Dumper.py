@@ -93,52 +93,54 @@ def decomp_lz77_11(data, startAddr, uncompSize):
     while readPos < len(data) and len(output) < uncompSize:
         blockHeader = readBin(data, readPos)    # ブロックヘッダの読み込み
         #print binascii.hexlify(currentChar)
-        readPos += 1
         blockHeader = ascii2bin(blockHeader)    # ブロックヘッダを2進数文字列に変換
-        for i in range(7,-1,-1):  # 8ブロックで1セット
-            # 非圧縮ブロックなら
-            first = readBin(data, readPos)
-            second = readBin(data, readPos + 1)
-
-            if first < 0x20:
-                third = readBin(data, readPos + 2)
-                if first >= 0x10:
-                    fourth = readBin(data, readPos + 3)
-
-                    pos =
-                    copyLen = 
-            if blockHeader[i] == str(0):
-                readPos += 1    # 次の読み取り位置へ
-                if readPos >= len(data):    # ここ適当
-                    break
-                currentChar = readBin(data, readPos)    # 1バイト読み込み
-                output += currentChar   # そのまま出力
-                writePos += 1   # 次の書き込み位置へ
-            # 圧縮ブロックなら
-            else:
-                readPos += 2
-                blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
-                blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
-                #print "Block Data: " + blockData
-                offs = int(blockData[4:16],2) + 1
-                #print "Backwards Offset: " + str(offs) + " bytes"
-                leng = int(blockData[0:4],2) + 3
-                #print "Copy Length: " + str(leng) + " bytes"
-                currentChar = output[writePos - offs : writePos - offs + leng]
-                if len(currentChar) < leng: # ここで引っかかった
-                    #print "Block Data: " + blockData
-                    #print "Backwards Offset: " + str(offs) + " bytes"
-                    #print "Copy Length: " + str(leng) + " bytes"
-                    # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
-                    #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
-                    currentChar = currentChar * leng # ここ適当
-                    currentChar = currentChar[0:leng]
-                    #print binascii.hexlify(currentChar)
-                #print currentChar
-                #print binascii.hexlify(currentChar)
-                output += currentChar
-                writePos += leng    # 書き込んだバイト数だけずらす
+        #print "Block Header: " + blockHeader
         readPos += 1
+
+        for i in range(8):  # 8ブロックで1セット
+            # 圧縮ブロックなら
+            if blockHeader[i] != str(0):
+
+                #first = readBin(data, readPos)  # u8:符号なし8ビット = 1バイト
+                first = binascii.hexlify(data[readPos])
+                second = binascii.hexlify(data[readPos + 1])
+
+                if int(first,16) < 0x20:
+                    third = binascii.hexlify(data[readPos + 2])  # 1バイト
+                    if int(first,16) >= 0x10:
+                        fourth = binascii.hexlify(data[readPos + 3])
+
+                        offs = ( (int(third,16) & 0xF) << 8 | int(fourth,16) ) + 1 # thirdと0xFのビットANDをとって,fourthとビットORを取った後 +1
+                        leng = ( int(second,16) << 4 | ( (int(first,16) & 0xF) << 12 )  | (int(third,16) >> 4) ) + 273
+
+                        readPos += 4
+
+                    else:
+                        offs =  (( (int(second,16) & 0xF) << 8 ) | int(third,16) ) + 1
+                        leng = (((int(first,16) & 0xF) << 4) | (int(second,16) >> 4)) + 17;
+
+                        readPos += 3
+                else:
+                    blockInfo = first + second
+                    #print "Block Info: " + blockInfo
+                    leng = int(blockInfo[0], 16) + 1
+                    #print "Copy Length: " + str(leng)
+                    offs = int(blockInfo[1:4], 16) + 1
+                    #print "Copy Offset: " + str(offs)
+
+                    readPos += 2
+
+                output += output[writePos - offs : writePos - offs + leng]
+                writePos += leng
+
+            # 非圧縮ブロックなら
+            else:
+                output += data[readPos]
+                writePos += 1
+                readPos += 1
+
+            if readPos >= len(data) or writePos >= uncompSize:
+                break
 
     output = output[0:uncompSize]   # 必要な部分だけ切り出し
     return output
@@ -241,7 +243,7 @@ with open(file, 'rb') as romFile:
 
         try:
             with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
-            #with open(path + "\\" + ext + "\\" + str(matchAddr) + "." + ext, "wb") as out:
+            #with open(path + "\\" + ext + "\\" + str(matchAddr) + "." + ext, "wb") as out:  # ファイル名がおかしくなる時はこっちで検証
                 print outName + "." + ext + "\n"
                 out.write(output)
                 #print readPos
