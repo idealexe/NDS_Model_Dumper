@@ -239,9 +239,9 @@ with open(file, 'rb') as romFile:
             ext = "nsbmd"
             # セクション数によって名前の位置がずれる
             if output[14] == str('\x01'):
-                outName = output[52:62].translate(None, str('\x00'))
+                outName = output[52:52 + 16].translate(None, str('\x00'))   # 名前は最大16バイト
             else:
-                outName = output[56:66].translate(None, str('\x00'))
+                outName = output[56:56 + 16].translate(None, str('\x00'))
 
         # nsbtxファイルなら
         elif match.group() == "BTX0":
