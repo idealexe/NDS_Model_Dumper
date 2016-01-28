@@ -109,7 +109,7 @@ def decomp_lz77_11(data, startAddr, uncompSize):
             else:
                 first = binascii.hexlify(data[readPos])
                 second = binascii.hexlify(data[readPos + 1])
-                print "first: 0x" + first
+                #print "first: 0x" + first
 
                 if int(first,16) < 0x20:
                     third = binascii.hexlify(data[readPos + 2])  # 1バイト
@@ -132,9 +132,9 @@ def decomp_lz77_11(data, startAddr, uncompSize):
                     blockInfo = first + second
                     #print "Block Info: " + blockInfo
                     offs = int(blockInfo[1:4], 16) + 1
-                    print "Copy Offset: " + str(offs)
+                    #print "Copy Offset: " + str(offs)
                     leng = int(blockInfo[0], 16) + 1
-                    print "Copy Length: " + str(leng)
+                    #print "Copy Length: " + str(leng)
 
                     readPos += 2
 
@@ -148,8 +148,8 @@ def decomp_lz77_11(data, startAddr, uncompSize):
                     copyData = copyData[0:leng]
 
                 output += copyData
-                print "Write Pos: " + hex(writePos)
-                print "Copy Data: " + binascii.hexlify(copyData)
+                #print "Write Pos: " + hex(writePos)
+                #print "Copy Data: " + binascii.hexlify(copyData)
                 writePos += leng
 
         if readPos >= len(data) or writePos >= uncompSize:
@@ -263,4 +263,4 @@ with open(file, 'rb') as romFile:
         except  IOError:
             print "skipped file"
 
-        break   # 1モデルだけ出力
+        #break   # 1モデルだけ出力
