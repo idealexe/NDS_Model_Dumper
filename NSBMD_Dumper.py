@@ -128,7 +128,6 @@ with open(file, 'rb') as romFile:
                     break
                 """
 
-
             output = output[0:uncompSize]   # 必要な部分だけ切り出し
             #print binascii.hexlify(output).upper()
             #print output
