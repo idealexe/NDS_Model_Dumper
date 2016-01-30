@@ -256,8 +256,10 @@ with open(file, 'rb') as romFile:
         else:
             ext = "unknown"
 
+        writeFile = path + "\\" + ext + "\\" + outName + "_" + hex(matchAddr) + "." + ext
+
         try:
-            with open(path + "\\" + ext + "\\" + outName + "." + ext, "wb") as out:
+            with open(writeFile, "wb") as out:
             #with open(path + "\\" + ext + "\\" + str(matchAddr) + "." + ext, "wb") as out:  # ファイル名がおかしくなる時はこっちで検証
                 print outName + "." + ext + "\n"
                 out.write(output)
