@@ -27,14 +27,15 @@ with open(bmdFileName, 'rb') as bmdFile:
 
         btxFileSize = struct.unpack('l', btxData[0x8 : 0x8 +4])
         btxFileSize = btxFileSize[0]
+        btxSectionSize = btxFileSize - 0x14
 
-        outFileSize = bmdSectionSize + btxFileSize - 0x14
+        outFileSize = bmdSectionSize + btxSectionSize
 
         # pythonは作成後の文字列を書き換えることはできないので切り出す
         bmdData = bmdData[0:0x0 + 8] + struct.pack('l', outFileSize) + '1000020018000000'.decode('hex') + struct.pack('l',bmdSectionSize) + bmdData[0x14:bmdFileSize]
         btxData = btxData[0x14 : btxFileSize]
 
         outData = bmdData + btxData
-
+        
         with open(outDataName, "wb") as out:
             out.write(outData)
